@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Transformer · proseeq</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:       #23232E;
+  --slate:      #3D5D6C;
+  --green:      #00B050;
+  --mid-grey:   #8D99AE;
+  --light-grey: #E7E9ED;
+  --cool-grey:  #F1F2F4;
+  --white:      #FFFFFF;
+  --green-bg:   #E6F7EE;
+  --green-border: #99DDB8;
+  --error-text: #C0392B;
+  --error-bg:   #FDF0EE;
+  --amber-bg:   #FFF8E6;
+  --amber-text: #B07800;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: var(--cool-grey);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--navy);
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  background: var(--navy);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid var(--green);
+}
+.logo {
+  width: 28px; height: 28px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+header h1 { color: var(--white); font-weight: 600; font-size: 0.9rem; letter-spacing: -0.01em; }
+header span { color: var(--mid-grey); font-size: 0.75rem; font-weight: 400; }
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(100vh - 52px);
+}
+.panel { display: flex; flex-direction: column; overflow: hidden; background: var(--white); }
+.panel-left { border-right: 1px solid var(--light-grey); }
+.panel-head { padding: 14px 22px 11px; border-bottom: 1px solid var(--light-grey); background: var(--white); }
+.panel-head h2 { font-weight: 600; color: var(--navy); font-size: 0.875rem; letter-spacing: -0.01em; }
+.panel-head p { font-size: 0.7rem; color: var(--mid-grey); margin-top: 2px; }
+.inputs {
+  flex: 1; padding: 16px 22px;
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; background: var(--white);
+}
+label { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid-grey); display: block; margin-bottom: 4px; }
+input, select, textarea {
+  font-family: inherit; font-size: 0.85rem; padding: 9px 12px;
+  border: 1.5px solid var(--light-grey); border-radius: 6px;
+  background: var(--white); color: var(--navy); outline: none; width: 100%;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--slate); }
+textarea { resize: vertical; min-height: 130px; line-height: 1.6; }
+.row { display: flex; gap: 10px; }
+.row > div { flex: 1; }
+.hint { font-size: 0.7rem; color: var(--mid-grey); background: var(--cool-grey); border-radius: 6px; padding: 9px 12px; border-left: 3px solid var(--green); line-height: 1.55; }
+.hint strong { color: var(--navy); }
+.btn-row { display: flex; gap: 10px; padding: 12px 22px; border-top: 1px solid var(--light-grey); background: var(--white); }
+.btn-clear { font-family: inherit; padding: 10px 16px; border-radius: 6px; border: 1.5px solid var(--light-grey); background: transparent; color: var(--mid-grey); cursor: pointer; font-weight: 500; font-size: 0.82rem; transition: border-color 0.15s, color 0.15s; }
+.btn-clear:hover { border-color: var(--mid-grey); color: var(--navy); }
+.btn-gen { font-family: inherit; flex: 1; padding: 10px 0; border-radius: 6px; border: none; background: var(--green); color: var(--white); cursor: pointer; font-weight: 600; font-size: 0.875rem; letter-spacing: -0.01em; transition: opacity 0.15s; }
+.btn-gen:hover:not(:disabled) { opacity: 0.88; }
+.btn-gen:disabled { opacity: 0.55; cursor: not-allowed; }
+.tabs { display: flex; padding: 0 22px; border-bottom: 1px solid var(--light-grey); background: var(--white); }
+.tab { padding: 10px 14px; font-size: 0.73rem; font-weight: 600; cursor: pointer; color: var(--mid-grey); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.toolbar { padding: 8px 22px; border-bottom: 1px solid var(--light-grey); display: flex; justify-content: space-between; align-items: center; background: var(--white); }
+.badge { font-size: 0.68rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: var(--cool-grey); color: var(--mid-grey); }
+.badge.ready   { background: var(--green-bg);  color: #007A38; }
+.badge.error   { background: var(--error-bg);  color: var(--error-text); }
+.badge.loading { background: var(--amber-bg);  color: var(--amber-text); }
+.btn-copy { font-family: inherit; font-size: 0.7rem; font-weight: 600; padding: 5px 11px; border-radius: 5px; border: 1.5px solid var(--light-grey); background: var(--white); cursor: pointer; color: var(--navy); transition: border-color 0.15s; }
+.btn-copy:hover:not(:disabled) { border-color: var(--mid-grey); }
+.btn-copy:disabled { opacity: 0.4; cursor: not-allowed; }
+.output { flex: 1; overflow-y: auto; padding: 14px 22px; background: var(--white); }
+.placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--mid-grey); text-align: center; padding: 30px; }
+.placeholder .icon { font-size: 2rem; opacity: 0.18; }
+.placeholder p { font-size: 0.8rem; line-height: 1.6; max-width: 220px; color: var(--mid-grey); }
+pre { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 0.68rem; line-height: 1.65; color: var(--navy); white-space: pre-wrap; word-break: break-word; }
+.error-box { padding: 20px; color: var(--error-text); font-size: 0.8rem; line-height: 1.6; }
+.summary { background: var(--green-bg); border: 1.5px solid var(--green-border); border-radius: 8px; padding: 14px 16px; font-size: 0.8rem; line-height: 1.7; color: var(--navy); }
+.summary h3 { font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.08em; color: #007A38; margin-bottom: 10px; font-weight: 700; }
+.summary-line { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 0.7rem; margin-bottom: 3px; }
+.dl-row { padding: 12px 22px; border-top: 1px solid var(--light-grey); background: var(--white); }
+.btn-dl { font-family: inherit; width: 100%; padding: 10px 0; border-radius: 6px; border: none; background: var(--slate); color: var(--white); cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: opacity 0.15s; }
+.btn-dl:hover:not(:disabled) { opacity: 0.88; }
+.btn-dl:disabled { opacity: 0.4; cursor: not-allowed; }
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.upload-zone { border: 1.5px dashed var(--light-grey); border-radius: 6px; padding: 14px 12px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; background: var(--white); position: relative; }
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--slate); background: var(--cool-grey); }
+.upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0; border: none; }
+.upload-zone-label { font-size: 0.72rem; color: var(--mid-grey); pointer-events: none; line-height: 1.5; }
+.upload-zone-label strong { color: var(--navy); }
+.attachment-preview { display: flex; align-items: center; gap: 10px; background: var(--cool-grey); border: 1px solid var(--light-grey); border-radius: 6px; padding: 8px 10px; }
+.attachment-thumb { width: 48px; height: 36px; object-fit: cover; border-radius: 3px; flex-shrink: 0; border: 0.5px solid var(--light-grey); }
+.attachment-thumb-pdf { width: 48px; height: 36px; background: var(--light-grey); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--mid-grey); flex-shrink: 0; }
+.attachment-info { flex: 1; min-width: 0; }
+.attachment-name { font-size: 0.75rem; font-weight: 500; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.attachment-meta { font-size: 0.65rem; color: var(--mid-grey); margin-top: 1px; }
+.attachment-remove { background: none; border: none; cursor: pointer; color: var(--mid-grey); font-size: 14px; line-height: 1; padding: 2px 4px; flex-shrink: 0; transition: color 0.15s; }
+.attachment-remove:hover { color: var(--navy); }
+.charcount { font-size: 0.625rem; color: var(--mid-grey); text-align: right; margin-top: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 2L13 5V11L8 14L3 11V5L8 2Z" fill="white" fill-opacity="0.9"/>
+    </svg>
+  </div>
+  <h1>Plan Transformer</h1>
+  <span>· proseeq JSON Generator</span>
+</header>
+<div class="main">
+  <!-- LEFT -->
+  <div class="panel panel-left">
+    <div class="panel-head">
+      <h2>Your Plan Input</h2>
+      <p>Any format — notes, screenshot, PDF, or existing plan</p>
+    </div>
+    <div class="inputs">
+      <div>
+        <label>Plan Name</label>
+        <input id="planName" placeholder="e.g. Website Relaunch 2026">
+      </div>
+      <div class="row">
+        <div><label>Start Date</label><input id="startDate" placeholder="e.g. 1 Jan 2026"></div>
+        <div><label>End Date</label><input id="endDate" placeholder="e.g. 31 Mar 2026"></div>
+      </div>
+      <div>
+        <label>Responsible Teams</label>
+        <input id="teams" placeholder="e.g. Design, Dev, SMEs">
+      </div>
+      <div>
+        <label>Company Website <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional — for brand colours)</span></label>
+        <input id="website" placeholder="e.g. https://yourcompany.com">
+      </div>
+      <div>
+        <label>Plan Description</label>
+        <textarea id="planInput" oninput="document.getElementById('cc').textContent=this.value.length+' chars'" placeholder="Describe your plan — any format, any level of detail..."></textarea>
+        <div class="charcount" id="cc">0 chars</div>
+      </div>
+      <div>
+        <label>Source File <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional — screenshot, PDF, doc)</span></label>
+        <div id="attachmentPreview" style="display:none" class="attachment-preview">
+          <img id="attachThumb" class="attachment-thumb" style="display:none" alt="">
+          <div id="attachThumbPdf" class="attachment-thumb-pdf" style="display:none">PDF</div>
+          <div class="attachment-info">
+            <div class="attachment-name" id="attachName"></div>
+            <div class="attachment-meta" id="attachMeta"></div>
+          </div>
+          <button class="attachment-remove" onclick="removeAttachment()" title="Remove">✕</button>
+        </div>
+        <div id="uploadZone" class="upload-zone"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt,.md" onchange="handleFileSelect(this.files[0])">
+          <div class="upload-zone-label">
+            <strong>Drop a file or click to browse</strong><br>
+            Screenshot, PDF, Word doc, or any plan format
+          </div>
+        </div>
+      </div>
+      <div class="hint"><strong>Generates:</strong> 3 phases · timeline bars · milestones · teams · status — ready to import</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+      <button class="btn-gen" id="genBtn" onclick="generate()">✦ Generate JSON</button>
+    </div>
+  </div>
+  <!-- RIGHT -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Generated JSON</h2>
+      <p>Ready to import into your app</p>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-json" onclick="switchTab('json')">JSON Output</div>
+      <div class="tab" id="tab-summary" onclick="switchTab('summary')">Plan Summary</div>
+    </div>
+    <div class="toolbar">
+      <span class="badge" id="badge">Waiting</span>
+      <button class="btn-copy" id="copyBtn" disabled onclick="copyJSON()">Copy JSON</button>
+    </div>
+    <div class="output" id="output">
+      <div class="placeholder">
+        <div class="icon">⬡</div>
+        <p>Fill in your plan and click <strong>Generate JSON</strong></p>
+      </div>
+    </div>
+    <div class="dl-row">
+      <button class="btn-dl" id="dlBtn" disabled onclick="downloadJSON()">↓ Download .json</button>
+    </div>
+  </div>
+</div>
+<script>
+// ── PROXY ENDPOINT ───────────────────────────────────────────────────
+// Points to the Cloudflare Worker which adds the API key server-side.
+// The system prompt lives in the Worker — it never reaches the client.
+const PROXY_URL = "/api/generate";
+
+let currentResult = null;
+let rawLines = [];
+let currentTab = 'json';
+let attachment = null;
+
+const FK = {
+  stage: "ebed647d-75e2-4998-8ce9-83c0cfb1be19",
+  resp:  "3a1764cf-f1ad-4c4b-8545-10dfce0cd85a",
+  stat:  "bd059ccc-0399-4b70-baf5-860e3f841dcc",
+  tasks: "f3bf8e23-a254-424e-a122-0f468a921e4a",
+  notes: "2c7abba3-0b64-4263-8142-2ef0e3a7839d"
+};
+const STATUSES = [
+  {id:"s1",value:"On Track",color:4278235216},
+  {id:"s2",value:"At Risk",color:4294951175},
+  {id:"s3",value:"Off Track",color:4293212469},
+  {id:"s4",value:"Complete",color:4287469998}
+];
+const TC = [
+  0xFF2A718B|0, 0xFF3984A3|0, 0xFF4CADB3|0,
+  0xFF2D516C|0, 0xFF3AB182|0, 0xFF6B88B7|0
+];
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+}
+function handleFileSelect(file) {
+  if (!file) return;
+  const maxMB = 20;
+  if (file.size > maxMB * 1024 * 1024) { alert(`File too large — maximum ${maxMB}MB.`); return; }
+  const isImage = file.type.startsWith('image/');
+  const isPdf   = file.type === 'application/pdf';
+  const isText  = !isImage && !isPdf;
+  const reader = new FileReader();
+  if (isText) {
+    reader.onload = e => {
+      const text = e.target.result;
+      const ta = document.getElementById('planInput');
+      const prefix = `[From ${file.name}]\n${text.slice(0, 8000)}\n\n`;
+      if (!ta.value.startsWith('[From')) ta.value = prefix + ta.value;
+      document.getElementById('cc').textContent = ta.value.length + ' chars';
+      showAttachmentBadge(file, null, false, false);
+      attachment = null;
+    };
+    reader.readAsText(file);
+  } else {
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(',')[1];
+      const mediaType = isImage ? file.type : 'application/pdf';
+      attachment = { base64, mediaType, name: file.name, isImage, isPdf };
+      showAttachmentBadge(file, isImage ? dataUrl : null, isImage, isPdf);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+function showAttachmentBadge(file, thumbSrc, isImage, isPdf) {
+  document.getElementById('uploadZone').style.display = 'none';
+  const preview = document.getElementById('attachmentPreview');
+  preview.style.display = 'flex';
+  document.getElementById('attachName').textContent = file.name;
+  document.getElementById('attachMeta').textContent = formatFileSize(file.size) + (isImage ? ' · image' : isPdf ? ' · PDF' : ' · text');
+  const thumb = document.getElementById('attachThumb');
+  const thumbPdf = document.getElementById('attachThumbPdf');
+  if (isImage && thumbSrc) { thumb.src = thumbSrc; thumb.style.display = 'block'; thumbPdf.style.display = 'none'; }
+  else if (isPdf) { thumb.style.display = 'none'; thumbPdf.style.display = 'flex'; }
+  else { thumb.style.display = 'none'; thumbPdf.style.display = 'none'; }
+}
+function removeAttachment() {
+  attachment = null;
+  document.getElementById('attachmentPreview').style.display = 'none';
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+}
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+document.addEventListener('paste', function(e) {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) { handleFileSelect(file); e.preventDefault(); }
+      break;
+    }
+  }
+});
+
+function uid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0;
+    return (c==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+}
+function toISO(date) {
+  const pad = n => String(n).padStart(2,'0');
+  return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate())+'T'+pad(date.getHours())+':'+pad(date.getMinutes())+':'+pad(date.getSeconds())+'.000';
+}
+function hexToArgb(hex) {
+  const h = hex.replace('#','');
+  if (h.length !== 6) return 4281090637;
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return (0xFF000000 | (r << 16) | (g << 8) | b) >>> 0;
+}
+function parseStartDate(raw) {
+  if (!raw) return "2026-01-01";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (!isNaN(d)) return d.toISOString().slice(0,10);
+  return "2026-01-01";
+}
+
+function buildJSON(lines, planName, startDateRaw, endDateRaw, teamNames, colours) {
+  const start = new Date(parseStartDate(startDateRaw)+"T00:00:00.000");
+  const endParsed = parseStartDate(endDateRaw);
+  const moduleId = uid();
+  const _msPerWeek = 7*24*60*60*1000;
+  const totalWeeks = Math.max(4, Math.round((new Date(endParsed+"T00:00:00.000") - start) / _msPerWeek));
+  const teamSelections = teamNames.map((n,i) => ({id:uid(),value:n,color:TC[i%TC.length]}));
+  const phases = {};
+  const phaseOrder = [];
+  lines.forEach(line => {
+    const parts = line.split("|").map(p=>p.trim());
+    if (parts.length < 7) return;
+    const type = parts[0], phase = parts[1], row = parseInt(parts[2])||0;
+    const name = parts[3], team = parts[4], status = parts[5];
+    const startW = parts[6], durW = parts[7]||"0", extra = parts[8]||"";
+    if (!phases[phase]) { phases[phase]=[]; phaseOrder.push(phase); }
+    const isMilestone = type==="M", isMilestoneSecondary = type==="S";
+    const isGovMile = type==="G", isPhaseLabel = type==="P", isKeyPeriod = type==="K";
+    const isAnyMile = isMilestone || isMilestoneSecondary || isGovMile;
+    phases[phase].push({
+      isMilestone, isMilestoneSecondary, isGovMile, isPhaseLabel, isKeyPeriod,
+      name: name.slice(0,40), team, status,
+      row: isAnyMile ? 3 : row,
+      startOffset: parseInt(startW)||0, durationWeeks: parseInt(durW)||0,
+      labelSide: isAnyMile ? (extra||"right") : "below",
+      context: !isAnyMile && !isPhaseLabel && extra && extra!=="-" ? extra : null
+    });
+  });
+  const cols = colours || {primary:"#3D5D6C", accent:"#e8a020"};
+  function toArgbFromHex(h) {
+    h = h.replace('#','');
+    const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    return ((0xFF<<24)|(r<<16)|(g<<8)|b)>>>0;
+  }
+  function neutralFromBrand(hex, lightenRatio) {
+    const h = hex.replace('#','');
+    let r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    const lum = Math.round(0.299*r + 0.587*g + 0.114*b);
+    r=lum; g=lum; b=lum;
+    r=Math.round(r+(255-r)*lightenRatio); g=Math.round(g+(255-g)*lightenRatio); b=Math.round(b+(255-b)*lightenRatio);
+    return ((0xFF<<24)|(r<<16)|(g<<8)|b)>>>0;
+  }
+  function darkenHex(hex, ratio) {
+    const h = hex.replace('#','');
+    const r=Math.round(parseInt(h.slice(0,2),16)*(1-ratio));
+    const g=Math.round(parseInt(h.slice(2,4),16)*(1-ratio));
+    const b=Math.round(parseInt(h.slice(4,6),16)*(1-ratio));
+    return ((0xFF<<24)|(r<<16)|(g<<8)|b)>>>0;
+  }
+  function getLuminance(hex) {
+    const h=hex.replace('#','');
+    const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+    return 0.299*r+0.587*g+0.114*b;
+  }
+  let effectivePrimary = cols.primary, effectiveAccent = cols.accent;
+  if (getLuminance(cols.primary) > 120) {
+    effectiveAccent = cols.primary;
+    effectivePrimary = (() => {
+      const h=cols.primary.replace('#','');
+      const r=Math.round(parseInt(h.slice(0,2),16)*0.35);
+      const g=Math.round(parseInt(h.slice(2,4),16)*0.35);
+      const b=Math.round(parseInt(h.slice(4,6),16)*0.35);
+      return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+    })();
+  }
+  const PROSEEQ_SLATE = "#2C424D";
+  const slateArgb = toArgbFromHex(PROSEEQ_SLATE);
+  const navyArgb = toArgbFromHex(PROSEEQ_SLATE);
+  const activityArgb = neutralFromBrand(effectivePrimary, 0.45);
+  const monthArgb = toArgbFromHex("#E7E9ED");
+  const contextArgb = neutralFromBrand(effectivePrimary, 0.93);
+  const separatorArgb = toArgbFromHex("#E7E9ED");
+  const accentArgb = toArgbFromHex(effectiveAccent);
+  const accentSecArgb = darkenHex(effectiveAccent, 0.20);
+  const primaryArgb = navyArgb;
+  const monthFgArgb = toArgbFromHex("#3D5D6C");
+  const secondaryArgb = activityArgb;
+  function shiftHue(hex, rShift, gShift, bShift, lighten) {
+    const h = hex.replace('#','');
+    let r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    r=Math.min(255,Math.max(0,Math.round(r*rShift+(255-r*rShift)*lighten)));
+    g=Math.min(255,Math.max(0,Math.round(g*gShift+(255-g*gShift)*lighten)));
+    b=Math.min(255,Math.max(0,Math.round(b*bShift+(255-b*bShift)*lighten)));
+    return ((0xFF<<24)|(r<<16)|(g<<8)|b)>>>0;
+  }
+  const phaseColors = [
+    toArgbFromHex(effectivePrimary),
+    shiftHue(effectivePrimary, 0.7, 0.85, 1.0, 0.15),
+    shiftHue(effectivePrimary, 0.85, 1.0, 0.7, 0.20)
+  ];
+  const contentPhases = phaseOrder.filter(p=>p!=="Governance"&&p!=="Phases"&&p!=="KeyPeriods");
+  const phaseSelections = contentPhases.map((p,i) => ({id:uid(),value:p,color:phaseColors[i%3]}));
+  const streamIds = contentPhases.map(()=>uid());
+  const mileSel    = {id:uid(),value:"Milestones",color:accentArgb};
+  const mileSecSel = {id:uid(),value:"Key Dates",color:accentSecArgb};
+  const GOV_STREAM_ID = uid(), PHASE_STREAM_ID = uid(), KEY_STREAM_ID = uid();
+  const phaseLabelColors = [
+    shiftHue(effectivePrimary, 1.0, 1.0, 1.0, 0.15),
+    shiftHue(effectivePrimary, 0.7, 0.85, 1.0, 0.20),
+    shiftHue(effectivePrimary, 0.85, 1.0, 0.7, 0.25)
+  ];
+  function streamRowCount(phaseName) {
+    const items = phases[phaseName] || [];
+    const activityItems = items.filter(i => !i.isMilestone && !i.isMilestoneSecondary && !i.isGovMile && !i.isPhaseLabel && !i.isKeyPeriod);
+    const milestoneItems = items.filter(i => i.isMilestone || i.isMilestoneSecondary || i.isGovMile);
+    if (activityItems.length === 0 && milestoneItems.length === 0) return 1;
+    const maxActivityRow = activityItems.reduce((max, i) => Math.max(max, i.row || 0), 0);
+    const milestoneRows = milestoneItems.length > 0 ? 1 : 0;
+    return (maxActivityRow + 1) + milestoneRows;
+  }
+  const hasKeyPeriods = (phases['KeyPeriods'] || []).length > 0;
+  let streamPos = 3;
+  const contentStreamDefs = phaseOrder
+    .filter(p => p !== "Governance" && p !== "Phases" && p !== "KeyPeriods")
+    .map((p, i) => {
+      const firstWithContext = (phases[p]||[]).find(item => !item.isMilestone && !item.isGovMile && !item.isPhaseLabel && item.context);
+      const ctx = firstWithContext ? firstWithContext.context : p;
+      return {
+        id: streamIds[i], title: p, position: streamPos++, rows: streamRowCount(p),
+        streamContext: ctx.slice(0,45), shape:"roundedRect",
+        color: slateArgb, contextColor: slateArgb, contextShape:"rect"
+      };
+    });
+  const streams = [
+    {id:PHASE_STREAM_ID, title:" ", position:0, rows:1, streamContext:" ", shape:"rect", color:4294967295, contextColor:4294967295, contextShape:"rect"},
+    {id:GOV_STREAM_ID, title:"Governance", position:1, rows:2, streamContext:"Executive decisions", shape:"roundedRect", color:slateArgb, contextColor:slateArgb, contextShape:"rect"},
+    ...(hasKeyPeriods ? [{id:KEY_STREAM_ID, title:" ", position:2, rows:1, streamContext:" ", shape:"rect", color:4294967295, contextColor:4294967295, contextShape:"rect"}] : []),
+    ...contentStreamDefs
+  ];
+  let pos=1;
+  const items=[];
+  phaseOrder.forEach((phase, pi) => {
+    const contentIdx = contentPhases.indexOf(phase);
+    const pSel = contentIdx >= 0 ? phaseSelections[contentIdx] : phaseSelections[0];
+    (phases[phase]||[]).forEach(item => {
+      const team = teamSelections.find(t=>t.value===item.team)||teamSelections[0];
+      const stat = STATUSES.find(s=>s.value===item.status)||STATUSES[0];
+      const isMile=item.isMilestone, isMileSec=item.isMilestoneSecondary;
+      const isGov=item.isGovMile, isPhase=item.isPhaseLabel, isKey=item.isKeyPeriod;
+      const isAnyMile = isMile || isMileSec || isGov;
+      const isoStart = toISO(new Date(start.getTime()+item.startOffset*7*86400000));
+      const streamName = isGov ? 'Governance' : (contentPhases[contentIdx] || contentPhases[0]);
+      const thisMilestoneRow = isGov ? 1 : Math.max(1, streamRowCount(streamName) - 1);
+      const effectiveRow = isAnyMile ? thisMilestoneRow : item.row;
+      const phaseIdx = isPhase ? (phases['Phases']||[]).indexOf(item) : 0;
+      const stageVal = isMile    ? {id:mileSel.id,   value:mileSel.value,   color:accentArgb}
+                     : isMileSec ? {id:mileSecSel.id, value:mileSecSel.value,color:accentSecArgb}
+                     : isGov     ? {id:mileSecSel.id, value:mileSecSel.value,color:accentSecArgb}
+                     : isPhase   ? {id:pSel.id,        value:'Phases',       color:phaseLabelColors[Math.min(phaseIdx,2)]}
+                     : isKey     ? {id:mileSecSel.id, value:"Key Period",    color:toArgbFromHex("#8D99AE")}
+                     :             {id:pSel.id,        value:pSel.value,      color:pSel.color};
+      const entry = {
+        id:uid(), moduleId, runtimeType:"timeline",
+        values:{
+          Name:item.name,
+          [FK.stage]: stageVal,
+          [FK.resp]: {id:team.id,value:team.value,color:team.color},
+          [FK.stat]: {id:stat.id,value:stat.value,color:stat.color},
+          [FK.tasks]: []
+        },
+        position:pos++,
+        milestoneLabelPosition: isKey ? "below" : isAnyMile ? (item.labelSide||"right") : "below",
+        fontSize: isPhase ? 18 : (isAnyMile || isKey) ? 12 : 11,
+        timelineStreamId: isGov ? GOV_STREAM_ID : isPhase ? PHASE_STREAM_ID : isKey ? PHASE_STREAM_ID : (streamIds[contentIdx] || streamIds[0]),
+        timelineStreamRow: isKey ? 0 : effectiveRow,
+        startDate:isoStart,
+        userIds:[], createdAt:1761874933841
+      };
+      if (!isAnyMile && !isKey) {
+        entry.shape = isPhase ? "rect" : "roundedRect";
+        entry.endDate = toISO(new Date(start.getTime()+(item.startOffset+item.durationWeeks)*7*86400000));
+      } else {
+        entry.shape = isMile ? "circle" : "triangle";
+      }
+      items.push(entry);
+    });
+  });
+  const MS_GAP = 5*7*86400000;
+  items.forEach(item => {
+    if (!item.endDate) {
+      const streamBars = items.filter(b => b.endDate && b.timelineStreamId === item.timelineStreamId);
+      let mileStart = new Date(item.startDate).getTime();
+      streamBars.forEach(bar => {
+        const barStart = new Date(bar.startDate).getTime();
+        const barEnd = new Date(bar.endDate).getTime();
+        if (mileStart >= barStart && mileStart <= barEnd) mileStart = barEnd + 7*86400000;
+      });
+      item.startDate = toISO(new Date(mileStart));
+    }
+  });
+  const allMiles = items.filter(i=>!i.endDate);
+  allMiles.sort((a,b) => new Date(a.startDate)-new Date(b.startDate));
+  for (let i=1; i<allMiles.length; i++) {
+    const prev = new Date(allMiles[i-1].startDate).getTime();
+    const curr = new Date(allMiles[i].startDate).getTime();
+    if (curr - prev < MS_GAP) allMiles[i].startDate = toISO(new Date(prev + MS_GAP));
+  }
+  let planEnd = new Date(endParsed+"T00:00:00.000");
+  items.forEach(item => {
+    const itemDate = new Date(item.startDate);
+    if (itemDate > planEnd) planEnd = new Date(itemDate.getTime() + 14*86400000);
+    if (item.endDate) {
+      const itemEnd = new Date(item.endDate);
+      if (itemEnd > planEnd) planEnd = new Date(itemEnd.getTime() + 7*86400000);
+    }
+  });
+  const endDate = toISO(planEnd);
+  return {
+    module:{
+      id:moduleId, name:planName||"Untitled Plan", position:1, runtimeType:"timeline",
+      itemFields:[
+        {key:"Name",label:"Name",position:0,runtimeType:"shortText"},
+        {key:FK.stage,label:"Stage",position:1,singleSelection:true,selections:[...phaseSelections,mileSel,mileSecSel],runtimeType:"options"},
+        {key:FK.resp,label:"Responsible",position:2,singleSelection:true,selections:teamSelections,runtimeType:"options"},
+        {key:FK.stat,label:"Status",position:3,singleSelection:true,selections:STATUSES,runtimeType:"options"},
+        {key:FK.tasks,label:"Tasks",position:4,hasAssignee:true,hasDate:true,isPercentage:true,runtimeType:"checklist"},
+        {key:FK.notes,label:"Notes",position:5,runtimeType:"longText"}
+      ],
+      config:{
+        startDate:toISO(start), endDate,
+        title:planName||"Untitled Plan", listLabelKey:"Name",
+        showTodayIndicator:true, showStreamContextColumn:true, showNotes:false,
+        headers:[
+          ...(totalWeeks < 13 ? [
+            {id:uid(),alignment:"center",dateFormat:"MMM yyyy",color:primaryArgb,forgroundColor:4294967295,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thick",verticalIndicatorBehaviour:"allTimeline",labels:{},runtimeType:"months"},
+            {id:uid(),alignment:"center",dateFormat:"w",color:monthArgb,forgroundColor:monthFgArgb,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thin",verticalIndicatorBehaviour:"singleHeader",labels:{},runtimeType:"weeks"}
+          ] : totalWeeks > 78 ? [
+            {id:uid(),alignment:"center",dateFormat:"yyyy",color:primaryArgb,forgroundColor:4294967295,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thick",verticalIndicatorBehaviour:"allTimeline",labels:{},runtimeType:"years"},
+            {id:uid(),alignment:"center",dateFormat:"yQQQ",color:monthArgb,forgroundColor:monthFgArgb,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thin",verticalIndicatorBehaviour:"singleHeader",labels:{},runtimeType:"quarters"}
+          ] : [
+            {id:uid(),alignment:"center",dateFormat:"yQQQ",color:primaryArgb,forgroundColor:4294967295,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thick",verticalIndicatorBehaviour:"allTimeline",labels:{},runtimeType:"quarters"},
+            {id:uid(),alignment:"center",dateFormat:"MMM",color:monthArgb,forgroundColor:monthFgArgb,seperatorColor:4294967295,shape:"rect",periodAnchor:"starting",verticalIndicatorAppearance:"thin",verticalIndicatorBehaviour:"singleHeader",labels:{},runtimeType:"months"}
+          ])
+        ],
+        indicators:[],namesWidth:160,streamContextWidth:300,checklistViewType:"percentage",
+        timelineStatusKey:FK.stat,checklistKey:FK.tasks
+      },
+      colors:[4281160044,4280971659,4281438597,4282036610,4293388781,4281090637,4287469998,4281827520,4294951175,4293212469,4278235216],
+      streams, steps:[], notes:"", ownerId:"user", userIds:["user"], lastSnapshotDecorator:"Last snapshot"
+    },
+    items
+  };
+}
+
+function setStatus(text, type) {
+  const b = document.getElementById('badge');
+  b.textContent = text;
+  b.className = 'badge' + (type?' '+type:'');
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-json').className = 'tab'+(tab==='json'?' active':'');
+  document.getElementById('tab-summary').className = 'tab'+(tab==='summary'?' active':'');
+  renderOutput();
+}
+function renderOutput() {
+  const out = document.getElementById('output');
+  if (!currentResult) return;
+  if (currentTab === 'json') {
+    out.innerHTML = '<pre>'+JSON.stringify(currentResult,null,2).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</pre>';
+  } else {
+    let html = '<div class="summary"><h3>Plan Summary</h3>';
+    rawLines.forEach(l => {
+      const parts = l.split('|');
+      const isM = parts[0]==='M';
+      html += `<div class="summary-line">${isM?'🏁':'▬'} ${parts.slice(1).join(' · ')}</div>`;
+    });
+    html += '</div>';
+    out.innerHTML = html;
+  }
+}
+
+async function generate() {
+  const planName   = document.getElementById('planName').value.trim();
+  const startDate  = document.getElementById('startDate').value.trim();
+  const endDate    = document.getElementById('endDate').value.trim();
+  const teamsRaw   = document.getElementById('teams').value.trim();
+  const planInput  = document.getElementById('planInput').value.trim();
+  const website    = document.getElementById('website').value.trim();
+  const teamNames  = (teamsRaw||"Project Team,Design Team,Dev Team").split(",").map(t=>t.trim()).filter(Boolean);
+  const sd = parseStartDate(startDate), ed = parseStartDate(endDate);
+  const msPerWeek = 7*24*60*60*1000;
+  const totalWeeksCalc = Math.max(4, Math.round((new Date(ed) - new Date(sd)) / msPerWeek));
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-AU', {day:'numeric',month:'long',year:'numeric'});
+  const projectStart = new Date(parseStartDate(startDate)+"T00:00:00");
+  const currentWeek = Math.max(0, Math.round((today - projectStart) / msPerWeek));
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generating…';
+  setStatus('Generating…','loading');
+  document.getElementById('copyBtn').disabled = true;
+  document.getElementById('dlBtn').disabled = true;
+  document.getElementById('output').innerHTML = '<div class="placeholder"><div class="icon">⬡</div><p>Building your plan…</p></div>';
+
+  if (window._genTimeout) clearTimeout(window._genTimeout);
+  window._genTimeout = setTimeout(() => {
+    btn.disabled = false; btn.innerHTML = '✦ Generate JSON';
+    setStatus('Timed out — try again', 'error');
+    window._genTimeout = null;
+  }, 120000);
+
+  try {
+    let userContent;
+    if (attachment) {
+      const sourceBlock = attachment.isImage
+        ? { type: "image", source: { type: "base64", media_type: attachment.mediaType, data: attachment.base64 } }
+        : { type: "document", source: { type: "base64", media_type: "application/pdf", data: attachment.base64 } };
+      userContent = [
+        sourceBlock,
+        { type: "text", text: `The attached file above is the SOURCE MATERIAL for this plan. Extract workstreams, activities, milestones, teams, and timelines from it.\n\nProject name: ${planName||"Untitled"}\nTeams: ${teamNames.join(", ")}\nStart date: ${startDate}\nEnd date: ${endDate}\nTotal duration: approximately ${totalWeeksCalc} weeks\nToday: ${todayStr} (week ${currentWeek})\nWebsite: ${website||"none"}` }
+      ];
+    } else {
+      userContent = `Project name: ${planName||"Untitled"}\nDescription: ${planInput||planName||"general project"}\nTeams: ${teamNames.join(", ")}\nStart date: ${startDate}\nEnd date: ${endDate}\nTotal duration: approximately ${totalWeeksCalc} weeks\nToday: ${todayStr} (week ${currentWeek})\nWebsite: ${website||"none"}`;
+    }
+
+    let res;
+    try {
+      res = await fetch(PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planName, startDate, endDate, teamNames, website, totalWeeks: totalWeeksCalc, currentWeek, todayStr, userContent })
+      });
+    } catch(fetchErr) {
+      throw new Error('Network error — could not reach the API proxy.');
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || `API error ${res.status}`);
+    if (!data.content || !data.content[0] || !data.content[0].text) throw new Error('Empty response from API — try again');
+
+    const text = data.content[0].text.trim();
+    const allLines = text.split("\n").map(l=>l.trim()).filter(l=>l.includes("|"));
+    const colourLines = allLines.filter(l=>l.startsWith("COLOUR|"));
+    const planLines   = allLines.filter(l=>!l.startsWith("COLOUR|"));
+    const colours = {primary:"#2d3f4e", accent:"#e8a020"};
+    colourLines.forEach(l => { const p=l.split("|"); if(p[1]&&p[2]) colours[p[1]]=p[2].trim(); });
+
+    rawLines = planLines;
+    currentResult = buildJSON(planLines, planName, startDate, endDate, teamNames, colours);
+    renderOutput();
+    setStatus('✓ Ready to import','ready');
+    document.getElementById('copyBtn').disabled = false;
+    document.getElementById('dlBtn').disabled = false;
+  } catch(e) {
+    setStatus('Error','error');
+    document.getElementById('output').innerHTML = '<div class="error-box"><strong>Error:</strong> '+e.message+'</div>';
+  }
+  clearTimeout(window._genTimeout);
+  window._genTimeout = null;
+  btn.disabled = false;
+  btn.innerHTML = '✦ Generate JSON';
+}
+
+function clearAll() {
+  document.getElementById('planName').value='';
+  document.getElementById('startDate').value='';
+  document.getElementById('endDate').value='';
+  document.getElementById('teams').value='';
+  document.getElementById('planInput').value='';
+  document.getElementById('website').value='';
+  document.getElementById('cc').textContent='0 chars';
+  removeAttachment();
+  currentResult=null; rawLines=[];
+  setStatus('Waiting','');
+  document.getElementById('copyBtn').disabled=true;
+  document.getElementById('dlBtn').disabled=true;
+  document.getElementById('output').innerHTML='<div class="placeholder"><div class="icon">⬡</div><p>Fill in your plan and click <strong>Generate JSON</strong></p></div>';
+}
+function copyJSON() {
+  if (!currentResult) return;
+  const text = JSON.stringify(currentResult, null, 2);
+  const b = document.getElementById('copyBtn');
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => { b.textContent='✓ Copied!'; setTimeout(()=>b.textContent='Copy JSON',2000); }).catch(()=>fallbackCopy(text,b));
+  } else { fallbackCopy(text,b); }
+}
+function fallbackCopy(text, btn) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='Copy JSON',2000); }
+  catch(e) { btn.textContent='Failed'; setTimeout(()=>btn.textContent='Copy JSON',2000); }
+  document.body.removeChild(ta);
+}
+function downloadJSON() {
+  if (!currentResult) return;
+  const name = (document.getElementById('planName').value||'plan').replace(/\s+/g,'-').toLowerCase()+'.json';
+  const blob = new Blob([JSON.stringify(currentResult,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); document.body.removeChild(a); }, 300);
+}
+</script>
+</body>
+</html>
